@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
-import Avatar2D from "./Avatar2D.jsx";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import Avatar from "./Avatar.jsx";
 
 export default function App() {
   const [status, setStatus] = useState("idle");
@@ -95,7 +97,13 @@ export default function App() {
   return (
     <div style={{ display: "flex", height: "100vh", color: "#e6e6e6", fontFamily: "system-ui" }}>
       <div style={{ flex: 1 }}>
-        <Avatar2D lipsync={lipsync} audioRef={audioRef} speaking={speaking} />
+        <Canvas camera={{ position: [0, 0, 4], fov: 35 }}>
+          <ambientLight intensity={0.7} />
+          <directionalLight position={[2, 4, 3]} intensity={1.4} />
+          <directionalLight position={[-3, 1, 2]} intensity={0.5} />
+          <Avatar lipsync={lipsync} audioRef={audioRef} speaking={speaking} />
+          <OrbitControls enablePan={false} target={[0, 0, 0]} />
+        </Canvas>
       </div>
 
       <div style={{ width: 380, padding: 20, background: "#161a22", display: "flex", flexDirection: "column" }}>
