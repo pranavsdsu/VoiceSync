@@ -1,0 +1,9 @@
+backend/venv/
+backend/.env
+backend/audio_out/
+backend/__pycache__/
+frontend/node_modules/
+frontend/dist/
+*.pyc
+.DS_Store
+backend/rhubarb/
