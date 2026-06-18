@@ -1,11 +1,5 @@
-import { useRef, useState, Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment } from "@react-three/drei";
-import Avatar from "./Avatar.jsx";
-
-// Swap this for your own ReadyPlayerMe avatar URL (must end in ?morphTargets=Oculus%20Visemes)
-const AVATAR_URL =
-  "https://models.readyplayer.me/64bfa15f0e72c63d7c3934a6.glb?morphTargets=Oculus%20Visemes";
+import { useRef, useState } from "react";
+import Avatar2D from "./Avatar2D.jsx";
 
 export default function App() {
   const [status, setStatus] = useState("idle");
@@ -19,14 +13,27 @@ export default function App() {
   const push = (role, text) => setLog((l) => [...l, { role, text }]);
 
   async function startRec() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const rec = new MediaRecorder(stream, { mimeType: "audio/webm" });
-    chunksRef.current = [];
-    rec.ondataavailable = (e) => chunksRef.current.push(e.data);
-    rec.onstop = () => handleAudio(new Blob(chunksRef.current, { type: "audio/webm" }));
-    rec.start();
-    recRef.current = rec;
-    setStatus("recording");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // pick a mimeType the browser actually supports
+      const mime = ["audio/webm", "audio/mp4", "audio/ogg"].find(
+        (m) => MediaRecorder.isTypeSupported(m)
+      );
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
+      rec.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop()); // release mic
+        handleAudio(new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" }));
+      };
+      rec.start();
+      recRef.current = rec;
+      setStatus("recording");
+    } catch (err) {
+      console.error("mic error", err);
+      push("assistant", "⚠️ Mic blocked or unavailable: " + err.message);
+      setStatus("idle");
+    }
   }
 
   function stopRec() {
@@ -35,12 +42,19 @@ export default function App() {
   }
 
   async function handleAudio(blob) {
-    const fd = new FormData();
-    fd.append("audio", blob, "in.webm");
-    const tr = await fetch("/api/transcribe", { method: "POST", body: fd }).then((r) => r.json());
-    if (!tr.text) { setStatus("idle"); return; }
-    push("user", tr.text);
-    await ask(tr.text);
+    try {
+      if (!blob.size) { push("assistant", "⚠️ No audio captured."); setStatus("idle"); return; }
+      const fd = new FormData();
+      fd.append("audio", blob, "in.webm");
+      const tr = await fetch("/api/transcribe", { method: "POST", body: fd }).then((r) => r.json());
+      if (!tr.text) { push("assistant", "⚠️ Didn't catch that — try again."); setStatus("idle"); return; }
+      push("user", tr.text);
+      await ask(tr.text);
+    } catch (err) {
+      console.error("transcribe error", err);
+      push("assistant", "⚠️ Transcription failed: " + err.message);
+      setStatus("idle");
+    }
   }
 
   async function ask(text) {
@@ -81,15 +95,7 @@ export default function App() {
   return (
     <div style={{ display: "flex", height: "100vh", color: "#e6e6e6", fontFamily: "system-ui" }}>
       <div style={{ flex: 1 }}>
-        <Canvas camera={{ position: [0, 0, 3], fov: 35 }}>
-          <ambientLight intensity={0.8} />
-          <directionalLight position={[2, 4, 3]} intensity={1.2} />
-          <Suspense fallback={null}>
-            <Avatar url={AVATAR_URL} lipsync={lipsync} audioRef={audioRef} speaking={speaking} />
-            <Environment preset="city" />
-          </Suspense>
-          <OrbitControls enablePan={false} target={[0, 0, 0]} />
-        </Canvas>
+        <Avatar2D lipsync={lipsync} audioRef={audioRef} speaking={speaking} />
       </div>
 
       <div style={{ width: 380, padding: 20, background: "#161a22", display: "flex", flexDirection: "column" }}>
@@ -105,9 +111,9 @@ export default function App() {
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           {status === "recording" ? (
-            <button onClick={stopRec} style={btn("#e05555")}>⏹ Stop</button>
+            <button onClick={stopRec} style={btn("#e05555")}>⏹ Stop &amp; send</button>
           ) : (
-            <button onClick={startRec} style={btn("#3a7afe")}>🎙 Hold to talk</button>
+            <button onClick={startRec} style={btn("#3a7afe")}>🎙 Click to record</button>
           )}
         </div>
         <form onSubmit={onText} style={{ display: "flex", gap: 8 }}>
