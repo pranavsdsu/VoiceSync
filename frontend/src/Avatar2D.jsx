@@ -5,7 +5,7 @@ import { useRef, useEffect } from "react";
 //
 // MOUTH_POS pins the mouth over the avatar's face. Tweak top/left (% of image)
 // if it doesn't line up with your image.
-const MOUTH_POS = { top: 19.5, left: 49, width: 6, maxHeight: 2.5 }; // percentages
+const MOUTH_POS = { top: 21.5, left: 49, width: 6, maxHeight: 2.5 }; // percentages
 
 const RHUBARB_OPEN = {
   A: 0.05, B: 0.3, C: 0.55, D: 1.0, E: 0.6, F: 0.4, G: 0.25, H: 0.45, X: 0.04,
