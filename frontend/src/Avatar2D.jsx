@@ -5,7 +5,7 @@ import { useRef, useEffect } from "react";
 //
 // MOUTH_POS pins the mouth over the avatar's face. Tweak top/left (% of image)
 // if it doesn't line up with your image.
-const MOUTH_POS = { top: 38, left: 50, width: 5.5, maxHeight: 4 }; // percentages
+const MOUTH_POS = { top: 19.5, left: 49, width: 6, maxHeight: 2.5 }; // percentages
 
 const RHUBARB_OPEN = {
   A: 0.05, B: 0.3, C: 0.55, D: 1.0, E: 0.6, F: 0.4, G: 0.25, H: 0.45, X: 0.04,
@@ -40,29 +40,33 @@ export default function Avatar2D({ lipsync, audioRef, speaking }) {
   }, [lipsync, audioRef, speaking]);
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
-      <img
-        src="/avatar.png"
-        alt="avatar"
-        style={{ width: "100%", height: "100%", objectFit: "contain" }}
-        onError={(e) => { e.currentTarget.style.opacity = 0.15; }}
-      />
-      {/* animated mouth */}
-      <div
-        ref={mouthRef}
-        style={{
-          position: "absolute",
-          top: MOUTH_POS.top + "%",
-          left: MOUTH_POS.left + "%",
-          width: MOUTH_POS.width + "%",
-          height: "0.3%",
-          transform: "translate(-50%, -50%)",
-          background: "#5a1018",
-          borderRadius: "50%",
-          transition: "height 0.05s linear, opacity 0.05s linear",
-          opacity: 0,
-        }}
-      />
+    // outer: center the avatar in the pane
+    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {/* inner: sized to the image so mouth % maps onto the image, not the pane */}
+      <div style={{ position: "relative", height: "100%", display: "inline-block" }}>
+        <img
+          src="/avatar_new.png"
+          alt="avatar"
+          style={{ height: "100%", width: "auto", display: "block" }}
+          onError={(e) => { e.currentTarget.style.opacity = 0.15; }}
+        />
+        {/* animated mouth */}
+        <div
+          ref={mouthRef}
+          style={{
+            position: "absolute",
+            top: MOUTH_POS.top + "%",
+            left: MOUTH_POS.left + "%",
+            width: MOUTH_POS.width + "%",
+            height: "0.3%",
+            transform: "translate(-50%, -50%)",
+            background: "#5a1018",
+            borderRadius: "50%",
+            transition: "height 0.05s linear, opacity 0.05s linear",
+            opacity: 0,
+          }}
+        />
+      </div>
     </div>
   );
 }
